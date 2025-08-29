@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio</title>
+    <link rel = "stylesheet" href="style.css">
+    <script src="https://kit.fontawesome.com/6e67f42dba.js" crossorigin="anonymous"></script>
+</head>
+<body>
+    
+<div id="header">
+    <div class = 'container'>
+        <nav>
+            <img src="images/logo.png" class="logo">
+            <ul id="sidemenu">
+                <li><a href="#home">Home</a></li>
+                <li><a href="#about">About</a></li>
+                <li><a href="#profile">Profile</a></li>
+                <li><a href="#portfolio">Work</a></li>
+                <li><a href="#contact">Contact</a></li>
+                <i class="fa-solid fa-circle-xmark" onclick="closemenu()"></i>
+            </ul>
+            <i class="fa-solid fa-bars" onclick="openmenu()"></i>
+        </nav>
+        <div class="header-text">
+            <p><span>AIML Engineer</span></p>
+            <h1>Hi, I'm <span>Shikha</span></h1>
+        </div>
+    </div> 
+</div>
+
+<!-- script for nav bar menu -->
+
+<script>
+    var menu = document.getElementById("sidemenu");
+    function openmenu(){
+        menu.style.right = "0";
+    }
+    function closemenu(){
+        menu.style.right = "-200px";
+    }
+</script>
+
+
+
+<!-- ----------------about---------------------- -->
+<div id ="about">
+    <div class="container">
+        <div class="row">
+            <div class="about-col-1">
+                <img src="images/image.jpg">
+            </div>
+            <div class="about-col-2">
+                <h1 class="sub-title"><br>About Me</h1>
+                <br>
+                <p>An <b>enthusiast</b> that's what I like to call myself. With a soul deeply rooted in the timeless beauty of literature and a mind ever-curious about the boundless possibilities of technology, I find my passion at the intersection of words and innovation, where stories meet code and imagination fuels progress.</p>
+
+                <div class="tab-titles">
+                    <p class="tab-links active-link" onclick="opentab('skills')">Skills</p>
+                    <p class="tab-links" onclick="opentab('education')">Education</p>
+                    <p class="tab-links" onclick="opentab('certifications')">Certifications</p>
+                </div>
+                <div class="tab-contents active-tab" id="skills">
+                    <ul>
+                        <li><span>
+                            <u><b>JAVA / C / Python</b></u>
+                        </span><br>Knowledge of core java skills, python progg, C progg</li>
+                        <li><span>
+                            <u><b>Problem solver</b></u>
+                        </span><br>Knick for logic building and problem solving skills</li>
+                        <li><span>
+                            <u><b>Web Devlopment</b></u>
+                        </span><br>Designing web interfaces</li>
+                    </ul>
+                </div>
+                <div class="tab-contents" id="education">
+                    <ul>
+                        <li><span>
+                            <u><b>2027</b></u>
+                        </span><br>B.Tech CSE with specialization in AIML</li>
+                        <li><span>
+                            <u><b>2023</b></u>
+                        </span><br>Inter from DAV Public school</li>
+                        <li><span>
+                            <u><b>2021</b></u>
+                        </span><br>Matriculation from DAV Public school</li>
+                    </ul>
+                </div>
+                <div class="tab-contents" id="certifications">
+                    <ul>
+                        <li><span>
+                            <u><b>Web Devlopment</b></u>
+                        </span><br>Basic & Advanced Web development certified from Devbhoomi Uttarakhand University</li>
+                        <li><span>
+                            <u><b>AWS & Springboot</b></u>
+                        </span><br>Cloud certifications from AWS and recognition for springboot framework knowledge</li>
+                        <li><span>
+                            <u><b>Hackathon/Developathon</b></u>
+                        </span><br>Participation & Volunteering certificates</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- script for about page (logic for hiding skill/edu/certificate sec) -->
+
+<script>
+    var tablinks = document.getElementsByClassName("tab-links");
+    var tabcontents = document.getElementsByClassName("tab-contents");
+
+    function opentab(tabname){
+        for(tablink of tablinks){
+            tablink.classList.remove("active-link");
+        }
+        for(tabcontent of tabcontents){
+            tabcontent.classList.remove("active-tab");
+        }
+        event.currentTarget.classList.add("active-link");
+        document.getElementById(tabname).classList.add("active-tab");
+    }
+</script>
+
+
+
+<!-- ----------------Profile----------------- -->
+    <div id ="profile">
+        <div class="container">
+            <h1 class="sub-title"><br>My Profile</h1>
+            <div class="profile-list">
+                <div>
+                    <i class="fa-solid fa-download"></i>
+                    <h2>Resume</h2>
+                    <p>My resume for perusual just a click away</p>
+                    <a href="Profile/Shikha_Resume.pdf">Download Resume File Here</a>
+                </div>
+                <div>
+                    <i class="fa-solid fa-share-from-square"></i>
+                    <h2>CARD</h2>
+                    <p>E-card</p>
+                    <a href="Profile/card.html">visit my e-card</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+<!-- -----------------portfolio---------------- -->
+<div id = "portfolio">
+    <div class="container">
+        <h1 class="sub-title">My Work</h1>
+        <div class="work-list">
+            <div class="work">
+                <img src="images/work2.avif">
+                <div class="layer">
+                    <h3>Jarvis: Speech recognizer device</h3>
+                    <p>explanation........</p>
+                    <a href="#"><i class="fa-solid fa-square-up-right"></i></a>
+                </div>
+            </div>
+            <div class="work">
+                <img src="images/work1.png">
+                <div class="layer">
+                    <h3>Weather App<br></h3>
+                    <p>Displays the weather of the place you enter. Designed with HTML,CSS and JS</p>
+                    <a href="Profile/Weather app/index.html"><i class="fa-solid fa-square-up-right"></i></a>  
+                </div>
+            </div>
+            <div class="work">
+                <img src="images/work3.avif">
+                <div class="layer">
+                    <h3>Sudoku Solver</h3>
+                    <p>A python powered logic to solve the game problem of sudoku with the help of backtracking concept.</p>
+                    <a href="Profile/Sudoku Solver/solver.py"><i class="fa-solid fa-square-up-right"></i></a><br>
+                </div>
+            </div>
+        </div>
+        <a href="#" class="btn">Explore</a>
+    </div>
+</div>
+
+
+<!-- -----------contact------------- -->
+<div id = "contact">
+    <div class="container">
+        <div class = "row">
+            <div class="contact-left">
+                <h1 class="sub-title">Contact Me</h1>
+                <p><i class="fa-solid fa-paper-plane"></i>  shikha.priya2006@gmail.com</p>
+                <p><i class="fa-solid fa-phone-volume"></i>  +91 7876628126</p><br>
+                <div class="social-icons">
+                    <a href="https://www.instagram.com/shikha.9683?utm_source=qr&igsh=MXU2ZGhhbGMxMDYzaQ== "><i class="fa-brands fa-square-instagram"></i></a>
+                    <a href="https://www.linkedin.com/in/shikha-j-04807833b?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app"><i class="fa-brands fa-linkedin"></i></a>
+                </div>
+            </div>
+            <div class="contact-right">
+                <form name="submit-to-google-sheet">
+                    <input type="text" name="Name" placeholder="Your Name" required>
+                    <input type="text" name="Email" placeholder="Your Email" required>
+                    <textarea name="Message" rows="6" placeholder="Your message"></textarea>
+                    <button type="submit"n class = "btn btn2">Submit</button>
+                </form>
+                <span id="msg"></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- script for contact : save to google sheet form -->
+
+<script>
+  const scriptURL = 'https://script.google.com/macros/s/AKfycbzHYyWeazd5pY4sdO0SrEShypACiGtKLP4q-xTrkDDo63ECdzSk88BZH74v4ir2NnCQNg/exec'
+  const form = document.forms['submit-to-google-sheet']
+  const msg = document.getElementById("msg")
+
+  form.addEventListener('submit', e => {
+    e.preventDefault()
+    fetch(scriptURL, { method: 'POST', body: new FormData(form)})
+      .then(response => {
+        msg.innerHTML = "Successfully sent"
+        setTimeout(function(){
+            msg.innerHTML = ""
+        },5000)
+        form.reset()
+      })
+      .catch(error => console.error('Error!', error.message))
+  })
+</script>
+
+</body>
+</html>
