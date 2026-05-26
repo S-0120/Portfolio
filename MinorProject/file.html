@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YWASTE - Home & Dashboards</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<!-- 1. FIREBASE SDK IMPORTS (REQUIRED) -->
+<!-- IMPORTANT: Replace with your actual Firebase project configuration later -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+<!-- LEAFLET (FREE MAP) -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<style>
+    /* --- GLOBAL STYLES & RESET --- */
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+    body { background-color: #f4f7f9; color: #333; line-height: 1.6; }
+    a { text-decoration: none; color: inherit; }
+    .hidden { display: none !important; }
+
+    /* --- LAYOUTS --- */
+    .dashboard-container { padding: 20px 50px; max-width: 1400px; margin: 0 auto; }
+    .page-wrapper { min-height: 100vh; } 
+    
+    /* --- NAVBAR --- */
+    .navbar { background: white; padding: 15px 50px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100; }
+    .nav-left { display: flex; align-items: center; }
+    .nav-logo { font-weight: 700; font-size: 1.2rem; color: #333; display: flex; align-items: center; gap: 10px; }
+    .nav-logo i { color: #2d8fd1; }
+    .nav-links a { text-decoration: none; color: #666; font-size: 0.9rem; margin-right: 30px; }
+    
+    .login-register-btn, .logout-btn { background: #f27a30; color: white; border: none; padding: 8px 20px; border-radius: 4px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+    .login-register-btn:hover, .logout-btn:hover { background: #d35400; }
+    
+    #userNavButtons { display: none; align-items: center; gap: 15px; } 
+    .profile-btn { background: #eee; color: #333; border-radius: 50%; width: 40px; height: 40px; padding: 0; display: flex; justify-content: center; align-items: center; cursor: pointer; }
+    
+    /* --- SPLASH SCREEN STYLES --- */
+    #splashScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; color: white; z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; opacity: 1; transition: opacity 1s ease-out; }
+    .splash-logo-container { width: 150px; height: 150px; margin-bottom: 30px; position: relative; display: flex; align-items: center; justify-content: center; }
+    .splash-logo-y { font-size: 4rem; font-weight: 700; color: white; z-index: 2; }
+    .splash-title { font-size: 2.5rem; letter-spacing: 5px; margin-bottom: 10px; }
+
+    /* --- LANDING PAGE (Home View) --- */
+    .landing-page { width: 100%; height: calc(100vh - 70px); background: linear-gradient(135deg, #6cdb58 0%, #2d8fd1 50%, #e88b3d 100%); display: flex; justify-content: center; align-items: center; position: relative; }
+    .hero-card { background: rgba(30, 40, 50, 0.85); width: 100%; max-width: 800px; padding: 60px 50px; border-radius: 15px; color: white; box-shadow: 0 20px 40px rgba(0,0,0,0.3); text-align: center; }
+    .hero-card h1 { font-size: 2.5rem; line-height: 1.2; margin-bottom: 15px; }
+
+    /* Feature card images */
+    .feature-cards-row {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      margin-top: 35px;
+    }
+
+    .feature-card {
+  width: 220px;
+  height: 150px;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  text-align: center;     /* KEEP THIS */
+}
+
+
+    .feature-card img.feature-bg {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 12px;
+    }
+
+    /* Text below card */
+    .feature-label {
+      margin-top: 10px;
+      font-size: 20px;
+      font-weight: 700;
+      color: #ffffff;
+      text-align: center;
+    }
+
+    .feature-card:hover {
+      transform: scale(1.06);
+      box-shadow: 0 8px 22px rgba(0,0,0,0.25);
+    }
+
+    .ngos-small {
+      /* height: 150px !important; */
+      object-fit: auto;
+    }
+
+    .feature-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  color: inherit;
+}
+
+
+    /* Logo animation */
+    .splash-logo-img {
+      z-index: 3;
+      position: relative;
+      opacity: 0;                 
+      transform: scale(0.8);      
+      animation: logoFadeIn 1.2s ease-out forwards 0.6s;
+    }
+
+    @keyframes logoFadeIn {
+      to {
+        opacity: 1;
+        transform: scale(1);      
+      }
+    }
+
+    /* --- POPUP FLOW STYLES --- */
+    .popup-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(8px); display: none; justify-content: center; align-items: center; }
+    .glass-card { width: 380px; padding: 40px 30px; border-radius: 20px; text-align: center; color: white; background: linear-gradient(180deg, rgba(50, 60, 80, 0.95), rgba(30, 40, 40, 0.95)); box-shadow: 0 25px 50px rgba(0,0,0,0.5); border: 1px solid rgba(255, 255, 255, 0.1); }
+    .popup-btns { display: flex; gap: 15px; }
+    .p-btn { flex: 1; border: none; padding: 12px 0; border-radius: 6px; color: white; font-weight: 600; cursor: pointer; }
+    .btn-orange { background: linear-gradient(90deg, #f2994a, #f2c94c); }
+    .btn-green { background: linear-gradient(90deg, #56ab2f, #a8e063); }
+    .white-card { background: white; width: 420px; padding: 40px; border-radius: 12px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.2); position: relative; }
+    .role-btn { width: 100%; display: flex; align-items: center; gap: 15px; padding: 15px 20px; background: #f9f9f9; border: 1px solid #eee; border-radius: 8px; margin-bottom: 15px; cursor: pointer; text-align: left; }
+    .form-card-container { width: 750px; max-width: 95%; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+    .form-input { width: 100%; padding: 12px 15px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem; }
+    .submit-register { background: #e67e22; color: white; border: none; padding: 14px 40px; border-radius: 30px; font-weight: 600; font-size: 1rem; cursor: pointer; }
+
+    /* --- DASHBOARD STYLES (Common) --- */
+    .dashboard-header { display: flex; justify-content: space-between; align-items: center; padding: 40px 0 20px 0; }
+    .welcome-text { font-size: 1.8rem; font-weight: 600; color: #555; }
+    .add-post-btn { background: #56ab2f; color: white; padding: 12px 25px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 10px; border: none; }
+    .section-title { font-size: 1.5rem; font-weight: 500; color: #444; margin-top: 30px; margin-bottom: 15px; }
+    .post-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+
+    /* --- NGO DASHBOARD SPECIFIC STYLES --- */
+    .ngo-main-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; }
+    .food-post-card { 
+        background: white; border-radius: 12px; padding: 20px; 
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); border-left: 5px solid #2d8fd1;
+        display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;
+    }
+    .post-details-info { display: flex; flex-direction: column; align-items: flex-start; }
+    .post-details-info h3 { margin: 0; font-size: 1.1rem; color: #333; }
+    .post-details-info p { margin: 2px 0; font-size: 0.85rem; color: #666; }
+    .post-details-info span { font-size: 0.8rem; color: #f27a30; font-weight: 600; margin-top: 5px; }
+
+    .claim-food-btn {
+        background: #f27a30; color: white; padding: 10px 20px; border-radius: 20px; 
+        font-weight: 600; cursor: pointer; border: none; transition: background 0.2s;
+        display: flex; align-items: center; gap: 8px;
+    }
+    .claim-food-btn:hover { background: #d35400; }
+    
+    .claimed-item { background: white; border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 10px; }
+    .claimed-item-header { display: flex; justify-content: space-between; font-weight: 600; }
+
+    /* MAP CONTAINER */
+    #ywasteMap {
+        height: 350px;
+        width: 100%;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        margin-bottom: 20px;
+    }
+
+    /* Add Food Post Popup */
+    .popup {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.55);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+    }
+
+    .popup-content {
+      width: 420px;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 6px 25px rgba(0,0,0,0.2);
+    }
+
+    .popup-content h2 {
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    .popup-content label {
+      font-size: 0.9rem;
+      font-weight: 600;
+      display: block;
+      margin-top: 12px;
+    }
+
+    .popup-content input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+    }
+
+    .submit-post {
+      margin-top: 20px;
+      background: #56ab2f;
+      color: white;
+      border: none;
+      width: 100%;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    .cancel-btn {
+      margin-top: 10px;
+      background: #ccc;
+      border: none;
+      width: 100%;
+      padding: 10px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+</style>
+</head>
+<body>
+
+    <!-- ====================================
+         LAYER 0: SPLASH SCREEN 
+         ==================================== -->
+    <div id="splashScreen">
+      <div class="splash-logo-container">
+        <div class="splash-arrow-ring splash-ar-1" style="border-top-color: #F2C94C; transform: rotate(20deg);"></div>
+        <div class="splash-arrow-ring splash-ar-2" style="border-right-color: #56ab2f; transform: rotate(140deg);"></div>
+        <div class="splash-arrow-ring splash-ar-3" style="border-left-color: #2F80ED; transform: rotate(260deg);"></div>
+        <img src="images/logo.png" class="splash-logo-img" alt="YWASTE Logo">
+      </div>
+
+      <h1 class="splash-title">YWASTE</h1>
+      <p class="splash-sub" style="color: #2F80ED;">By Shikha & Ananya </p>
+    </div>
+
+    <!-- --- MAIN APPLICATION LAYOUT --- -->
+    <div id="mainApp" class="page-wrapper hidden">
+        
+        <!-- --- NAVBAR --- -->
+        <nav class="navbar">
+            <div class="nav-left">
+                <div class="nav-logo"><i class="fas fa-recycle"></i> YWASTE</div>
+                <div class="nav-links" style="margin-left: 30px;">
+                    <a href="#" onclick="showHome()">Home</a>
+                </div>
+            </div>
+            <div class="nav-right">
+                <!-- Buttons shown when user is NOT logged in -->
+                <button id="loginRegisterBtn" class="login-register-btn" onclick="openInitialPopup()">Login / Register</button>
+                
+                <!-- Buttons shown when user IS logged in -->
+                <div id="userNavButtons">
+                    <button class="profile-btn" title="View Profile"><i class="fas fa-user"></i></button>
+                    <button class="logout-btn" onclick="handleLogout()">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- --- MAIN CONTENT CONTAINER (Swaps Home/Dashboards) --- -->
+        <div id="mainContent">
+            
+            <!-- --- 1. HOME/LANDING PAGE --- -->
+            <div id="homePage" class="landing-page">
+                <div class="hero-card">
+                    <h1>Bridge the Gap. Fight Food Waste</h1>
+                    <p>Connecting surplus food with communities in need through our dedicated network of donors and volunteers.</p>
+
+                    <div class="feature-cards-row">
+
+  <!-- Restaurant card -->
+  <div onclick="handleFeatureClick('restaurant')" class="feature-link">
+    <div class="feature-card">
+      <img src="images/restaurant.avif" alt="Restaurant" class="feature-bg">
+    </div>
+    <p class="feature-label">Restaurant</p>
+  </div>
+
+  <!-- NGO card -->
+  <div onclick="handleFeatureClick('ngo')" class="feature-link">
+    <div class="feature-card">
+      <img src="images/ngo.webp" alt="NGOs" class="feature-bg ngos-small">
+    </div>
+    <p class="feature-label">NGOs</p>
+  </div>
+
+  <!-- Impact card (unchanged) -->
+  <a href="impact.html" class="feature-link">
+    <div class="feature-card">
+      <img src="images/impact.jpg" alt="Impact" class="feature-bg">
+    </div>
+    <p class="feature-label">Impact</p>
+  </a>
+
+</div>
+
+
+</div>
+            </div>
+
+            <!-- --- 2. RESTAURANT DASHBOARD (Donor View) --- -->
+            <div id="restDashboard" class="dashboard-container hidden">
+                <div class="dashboard-header">
+                    <h1 class="welcome-text">Welcome back, <span id="restaurantName"></span>!</h1>
+                    <button class="add-post-btn" onclick="openFoodPopup()"><i class="fas fa-plus"></i> Add Food Post</button>
+                </div>
+                <hr>
+                <h2 class="section-title">Current Active Food Posts</h2>
+                <div class="post-grid" id="restaurantPostGrid">
+                    <div class="food-post-card" style="border-left-color: #56ab2f;">
+                        <div class="post-details-info">
+                            <h3>Dinner Buffet Surplus</h3>
+                            <p>Quantity: 20 Meals | Type: Indian/Continental</p>
+                            <span><i class="fas fa-clock"></i> Pickup Window: 7:00 PM - 8:30 PM</span>
+                        </div>
+                        <button class="claim-food-btn" style="background:#56ab2f;">View Claim</button>
+                    </div>
+                    <div class="food-post-card" style="border-left-color: #2d8fd1;">
+                        <div class="post-details-info">
+                            <h3>Lunch Catering Remainder</h3>
+                            <p>Quantity: 12 Meals | Type: Sandwiches/Wraps</p>
+                            <span><i class="fas fa-clock"></i> Pickup Window: 1:30 PM - 2:00 PM</span>
+                        </div>
+                        <button class="claim-food-btn" style="background:#2d8fd1;">Claimed</button>
+                    </div>
+                </div>
+                <h2 class="section-title">Your Impact</h2>
+                <div class="post-grid">
+                    <div class="food-post-card" style="border-left:none; box-shadow: none; background: #fff8e1; text-align:center; flex-direction: column;">
+                        <h3 style="font-size: 2.5rem; color: #f2994a;">24</h3>
+                        <p style="color: #333; font-weight: 600;">Total Meals Donated</p>
+                    </div>
+                    <div class="food-post-card" style="border-left:none; box-shadow: none; background: #e8f5e9; text-align:center; flex-direction: column;">
+                        <i class="fas fa-award" style="font-size:3rem; color:#c0c0c0;"></i>
+                        <p style="color: #333; font-weight: 600;">Silver Partner Badge</p>
+                    </div>
+                </div>
+
+                <!-- ADD FOOD POST POPUP -->
+                <div id="addFoodPopup" class="popup hidden">
+                  <div class="popup-content">
+                    <h2>Add Food Post</h2>
+
+                    <form id="foodPostForm">
+                      <label>Food Title *</label>
+                      <input type="text" id="foodTitle" required>
+
+                      <label>Quantity *</label>
+                      <input type="number" id="foodQuantity" min="1" required>
+
+                      <label>Type of Food *</label>
+                      <input type="text" id="foodType" required placeholder="e.g. Indian, Continental">
+
+                      <label>Pickup Window *</label>
+                      <input type="text" id="pickupTime" placeholder="e.g. 7:00 PM - 8:30 PM" required>
+
+                      <button type="submit" class="submit-post">Post Food</button>
+                      <button type="button" class="cancel-btn" onclick="closeFoodPopup()">Cancel</button>
+                    </form>
+                  </div>
+                </div>
+
+            </div> 
+            
+            <!-- --- 3. NGO DASHBOARD (Recipient/Volunteer View) --- -->
+            <div id="ngoDashboard" class="dashboard-container hidden">
+                <div class="dashboard-header">
+                    <h1 class="welcome-text">Welcome, <span id="ngoName"></span>!</h1>
+
+                    <div style="display:flex; gap:15px;">
+                        <button class="add-post-btn" style="background:#2d8fd1;" onclick="toggleMapView()">
+  <i class="fas fa-map-marked-alt"></i> Map View
+</button>
+
+                        <button class="add-post-btn" style="background:#7cb342;" onclick="toggleVolunteerLog()">
+  <i class="fas fa-hands-helping"></i> Volunteer Log
+</button>
+
+                    </div>
+                </div>
+                <hr>
+
+                <div class="ngo-main-grid">
+                    <!-- Left Column: Available Posts + MAP -->
+                    <div>
+                        <h2 class="section-title">Food Locations Map</h2>
+                        <div id="ywasteMap" class="hidden"></div>
+
+
+                        <h2 class="section-title">Nearby Available Food <i class="fas fa-location-arrow" style="font-size: 1rem; color: #2d8fd1;"></i></h2>
+                        
+                        <!-- Post Card 1 -->
+                        <div class="food-post-card">
+                            <div class="post-details-info">
+                                <h3>Breakfast Pastries & Coffee</h3>
+                                <p>Source: Cafe Delight | Quantity: ~30 items</p>
+                                <span><i class="fas fa-route"></i> 1.2 km away | <i class="fas fa-clock"></i> Ready Now</span>
+                            </div>
+                            <button class="claim-food-btn" onclick="handleClaim('Cafe Delight Pastries', 1.2, '45 min')">
+                                <i class="fas fa-hand-holding-heart"></i> Claim
+                            </button>
+                        </div>
+                        
+                        <!-- Post Card 2 -->
+                        <div class="food-post-card" style="border-left-color: #56ab2f;">
+                            <div class="post-details-info">
+                                <h3>Dinner Buffet Surplus (Hot Food)</h3>
+                                <p>Source: Grand Banquet Hall | Quantity: 40 Meals</p>
+                                <span><i class="fas fa-route"></i> 2.8 km away | <i class="fas fa-clock"></i> Ready in 30 min</span>
+                            </div>
+                            <button class="claim-food-btn" onclick="handleClaim('Grand Banquet Dinner', 2.8, '1 hour')">
+                                <i class="fas fa-hand-holding-heart"></i> Claim
+                            </button>
+                        </div>
+                        
+                        <!-- Post Card 3 (Chilled Food) -->
+                        <div class="food-post-card" style="border-left-color: #3498db;">
+                            <div class="post-details-info">
+                                <h3>Excess Milk & Dairy</h3>
+                                <p>Source: Local Grocer | Quantity: 15 Litres</p>
+                                <span><i class="fas fa-route"></i> 0.5 km away | <i class="fas fa-clock"></i> Must Pickup By 5 PM</span>
+                            </div>
+                            <button class="claim-food-btn" onclick="handleClaim('Local Grocer Milk', 0.5, '20 min')">
+                                <i class="fas fa-hand-holding-heart"></i> Claim
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Claimed Food Tracker -->
+                    <div>
+                        <h2 class="section-title">Your Active Claims <i class="fas fa-box-open" style="font-size: 1rem; color: #f27a30;"></i></h2>
+                        
+                        <div id="claimedItemsContainer">
+                            <!-- Items claimed dynamically populate here -->
+                            <div style="color: #999; font-style: italic; padding: 20px; text-align: center; border: 1px dashed #ddd; border-radius: 8px;" id="noClaimsMessage">
+                                No active claims. Find food to start!
+                            </div>
+                        </div>
+
+                        <h2 class="section-title" style="margin-top: 40px;">Claim History</h2>
+                        <div id="volunteerLogSection" class="hidden" style="margin-top:40px;">
+  <h2 class="section-title">Volunteer Log <i class="fas fa-book" style="font-size:1rem;color:#2d8fd1;"></i></h2>
+
+  <form id="volunteerLogForm" style="background:white; padding:20px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.1); margin-bottom:20px;">
+    <input class="form-input" id="logName" placeholder="Volunteer Name" required style="margin-bottom:10px;">
+    <input class="form-input" id="logFood" placeholder="Food Item Collected" required style="margin-bottom:10px;">
+    <input class="form-input" id="logMeals" type="number" placeholder="Meals Collected" required style="margin-bottom:10px;">
+    <input class="form-input" id="logDate" type="date" required style="margin-bottom:10px;">
+    <button class="add-post-btn" type="submit" style="width:100%; background:#7cb342;">Save Log</button>
+  </form>
+
+  <div id="volunteerLogList" style="background:white; padding:20px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.1);">
+    <p style="color:#888; text-align:center;" id="noLogMsg">No volunteer logs yet.</p>
+  </div>
+</div>
+
+                        <div class="claimed-item" style="opacity: 0.7;">
+                            <div class="claimed-item-header"><span>Pastries (Cafe Delight)</span> <span style="color:#56ab2f;">Collected</span></div>
+                            <p style="font-size: 0.75rem; color: #888;">Completed: Yesterday at 9:00 AM</p>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- ====================================
+         LAYER 4: POPUP OVERLAY (Registration/Login)
+         ==================================== -->
+    <div class="popup-overlay" id="mainOverlay">
+        <!-- STEP 1: WELCOME POPUP (Default view when overlay opens) -->
+        <div class="glass-card" id="popupWelcome">
+          <div style="width: 80px; height: 80px; margin: 0 auto 20px auto; position: relative; display: flex; align-items: center; justify-content: center;">
+             <div class="splash-arrow-ring splash-ar-1" style="border-width:4px;"></div>
+             <div class="splash-arrow-ring splash-ar-2" style="border-width:4px;"></div>
+             <div class="splash-arrow-ring splash-ar-3" style="border-width:4px;"></div>
+             <div class="logo-y" style="font-size:2.5rem; font-weight:700;">Y</div>
+          </div>
+          <h2 class="splash-title" style="font-size:1.6rem;">YWASTE</h2>
+          <p class="splash-sub" style="font-size:0.65rem;">Turning Surplus Into Smiles</p>
+          <div class="popup-btns">
+            <button class="p-btn btn-orange" onclick="goToStep2()">Register Now</button>
+            <button class="p-btn btn-green" onclick="window.open('impact.html', '_blank')">Learn More</button>
+          </div>
+        </div>
+
+        <!-- STEP 2: ROLE SELECTION -->
+        <div class="white-card hidden" id="popupRole">
+          <div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 20px; color: #56ab2f; font-weight: 700; font-size: 1.1rem;"><i class="fas fa-leaf"></i> YWASTE</div>
+          <h2 style="color: #333; font-size: 1.8rem; font-weight: 600; margin-bottom: 30px;">Join YWASTE</h2>
+          
+          <button class="role-btn" onclick="goToStep3()">
+            <i class="fas fa-hat-chef role-icon" style="color:#e67e22;"></i>
+            <div style="display:flex; flex-direction:column; align-items:flex-start;"><span class="role-text">I am a Restaurant (Donor)</span></div>
+          </button>
+          
+          <button class="role-btn" onclick="showNgoForm()">
+            <i class="fas fa-hands-helping role-icon" style="color:#e67e22;"></i>
+            <div style="display:flex; flex-direction:column; align-items:flex-start;">
+              <span class="role-text">I am a NGO or Volunteer</span>
+            </div>
+          </button>
+
+          <a href="#" style="display: block; margin-top: 20px; font-size: 0.85rem; color: #888; text-decoration: none;" 
+             onclick="pRole.classList.add('hidden'); pLogin.classList.remove('hidden'); return false;">
+             Already have account? Log In
+          </a>
+        </div>
+
+        <!-- LOGIN FORM (Step 2b) -->
+        <div class="white-card hidden" id="popupLogin">
+            <h2 style="font-size: 1.8rem; font-weight: 600; margin-bottom: 30px;">Log In</h2>
+            <form onsubmit="event.preventDefault(); handleLogin();">
+                <input type="email" class="form-input" id="loginEmail" placeholder="Registered Email"
+ required style="margin-bottom: 15px;">
+                <input type="password" class="form-input" id="loginPassword" placeholder="Password" required style="margin-bottom: 25px;">
+                <button type="submit" class="submit-register">Log In</button>
+            </form>
+            <a href="#" style="display: block; margin-top: 20px; font-size: 0.85rem;" 
+               onclick="goToStep2(); pLogin.classList.add('hidden'); return false;">
+               Don't have an account? Register
+            </a>
+        </div>
+
+        <!-- STEP 3: RESTAURANT FORM -->
+        <div class="white-card form-card-container hidden" id="popupForm">
+          <h2 style="margin-bottom:10px; font-size:1.5rem;">Register as Restaurant Partner</h2>
+          <form onsubmit="event.preventDefault(); handleRestaurantRegistration();">
+            <div class="form-grid">
+              <input type="email" class="form-input" id="regEmail" placeholder="Email" required>
+              <input type="password" class="form-input" id="regPassword" placeholder="Password" required>
+              <input type="text" class="form-input" id="regRestaurantName" placeholder="Restaurant Name" required>
+              <input type="text" class="form-input" placeholder="Address" required>
+              <input type="tel" class="form-input" placeholder="Phone Number" required>
+              <input type="text" class="form-input" placeholder="FSSAI Number (Optional)">
+              <input type="password" class="form-input" placeholder="Confirm Password" required>
+              <button type="button" class="form-input" style="background:#e8e8e8; grid-column: 1 / -1;">
+                <i class="fas fa-cloud-upload-alt"></i> Upload Logo
+              </button>
+            </div>
+            <button type="submit" class="submit-register">Register Restaurant</button>
+          </form>
+        </div>
+
+        <!-- STEP 3B: NGO / VOLUNTEER FORM -->
+        <div class="white-card form-card-container hidden" id="popupNgoForm">
+          <h2 style="margin-bottom:10px; font-size:1.5rem;">Register as NGO / Volunteer</h2>
+
+          <form onsubmit="event.preventDefault(); handleNgoRegistration();">
+            <div class="form-grid">
+              <input type="text" class="form-input" id="ngoFullName" placeholder="Your Name / NGO Name" required>
+              <input type="email" class="form-input" id="ngoEmail" placeholder="Email" required>
+              <input type="password" class="form-input" id="ngoPassword" placeholder="Password" required>
+              <input type="text" class="form-input" placeholder="Address" required>
+              <input type="tel" class="form-input" placeholder="Contact Number" required>
+            </div>
+            <button type="submit" class="submit-register">Register NGO / Volunteer</button>
+          </form>
+        </div>
+    </div>
+
+    <script>
+        // --- Simulated State for UI Testing ---
+        // let currentUserRole = null;
+        let claimedItems = []; // Array to hold claimed posts
+        let ywasteMap = null; // For NGO map
+        let foodPosts = [];   // For restaurant posts
+
+        // --- Core Authentication Handlers (SIMULATED) ---
+        async function handleLogin() {
+  const email = document.getElementById("loginEmail").value.trim();
+  const password = document.getElementById("loginPassword").value.trim();
+
+  try {
+    const userCred = await firebase.auth().signInWithEmailAndPassword(email, password);
+    const uid = userCred.user.uid;
+
+    const doc = await firebase.firestore().collection("users").doc(uid).get();
+    const data = doc.data();
+
+    // Store role + name properly
+    localStorage.setItem("ywasteRole", data.role);
+
+    if (data.role === "ngo") {
+      localStorage.setItem("ngoName", data.name);
+      loadDashboard("ngo");
+    } else if (data.role === "restaurant") {
+      localStorage.setItem("restaurantName", data.name);
+      loadDashboard("restaurant");
+    }
+
+    closeOverlay();
+  } catch (err) {
+    alert("Login Failed: " + err.message);
+  }
+}
+
+
+
+
+
+
+        async function handleRestaurantRegistration() {
+  const name = document.getElementById("regRestaurantName").value.trim();
+  const email = document.getElementById("regEmail").value.trim();
+  const password = document.getElementById("regPassword").value.trim();
+  const confirm = document.querySelector("#popupForm input[placeholder='Confirm Password']").value.trim();
+
+  if (password !== confirm) {
+    alert("Passwords do not match. Please re-check.");
+    return;
+  }
+
+  try {
+    const userCred = await firebase.auth().createUserWithEmailAndPassword(email, password);
+    const uid = userCred.user.uid;
+
+    await firebase.firestore().collection("users").doc(uid).set({
+      name, role: "restaurant", email, createdAt: new Date()
+    });
+
+    localStorage.setItem("restaurantName", name);
+    localStorage.setItem("ywasteRole", "restaurant");
+
+    closeOverlay();
+    loadDashboard("restaurant");
+
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+
+
+
+
+
+       async function handleNgoRegistration() {
+  const name = document.getElementById("ngoFullName").value.trim();
+  const email = document.getElementById("ngoEmail").value.trim();
+  const password = document.getElementById("ngoPassword").value.trim();
+
+  try {
+    const userCred = await firebase.auth().createUserWithEmailAndPassword(email, password);
+    const uid = userCred.user.uid;
+
+    await firebase.firestore().collection("users").doc(uid).set({
+      name, role: "ngo", email, createdAt: new Date()
+    });
+
+    localStorage.setItem("ngoName", name);
+    localStorage.setItem("ywasteRole", "ngo");
+
+    closeOverlay();
+    loadDashboard("ngo");
+
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+
+
+
+
+
+        function handleLogout() {
+  firebase.auth().signOut();     // sign out from Firebase
+  localStorage.clear();          // clear stored user details & role
+  showHome();                    // return user to home page
+}
+
+
+        // --- NGO CLAIM LOGIC ---
+        function handleClaim(postTitle, distance, pickupTime) {
+            const claimId = Date.now();
+            const newItem = {
+                id: claimId,
+                title: postTitle,
+                distance: distance,
+                pickupTime: pickupTime,
+                status: 'Pending Pickup'
+            };
+            claimedItems.push(newItem);
+            renderClaimedItems();
+            alert(`SUCCESS! You have claimed "${postTitle}". Please arrange pickup.`);
+        }
+
+        function handleComplete(claimId) {
+             claimedItems = claimedItems.filter(item => item.id !== claimId);
+             renderClaimedItems();
+             alert("Claim marked as collected! Thank you for your service.");
+        }
+
+        function renderClaimedItems() {
+            const container = document.getElementById('claimedItemsContainer');
+            const noClaimsMessage = document.getElementById('noClaimsMessage');
+            
+            if (claimedItems.length === 0) {
+                if (noClaimsMessage) noClaimsMessage.classList.remove('hidden');
+                container.innerHTML = noClaimsMessage ? noClaimsMessage.outerHTML : '';
+                return;
+            }
+
+            if (noClaimsMessage) noClaimsMessage.classList.add('hidden');
+            
+            const itemsHtml = claimedItems.map(item => `
+                <div class="claimed-item" data-id="${item.id}">
+                    <div class="claimed-item-header">
+                        <span>${item.title}</span> 
+                        <span style="color:#2d8fd1; font-weight:700; font-size:0.85rem;">${item.status}</span>
+                    </div>
+                    <p style="font-size: 0.75rem; color: #888;">${item.distance} km away. Est. Travel: ${item.pickupTime}</p>
+                    <button style="float:right; margin-top:10px;" class="claim-food-btn" onclick="handleComplete(${item.id})">
+                        <i class="fas fa-check"></i> Collected
+                    </button>
+                    <div style="clear:both;"></div>
+                </div>
+            `).join('');
+
+            container.innerHTML = itemsHtml;
+            container.appendChild(noClaimsMessage);
+        }
+
+        // --- UI VIEW SWITCHING FUNCTIONS ---
+        const overlay = document.getElementById('mainOverlay');
+        const pWelcome = document.getElementById('popupWelcome');
+        const pRole = document.getElementById('popupRole');
+        const pForm = document.getElementById('popupForm');
+        const pLogin = document.getElementById('popupLogin');
+        const splashScreen = document.getElementById('splashScreen');
+        
+        const homePage = document.getElementById('homePage');
+        const restDashboard = document.getElementById('restDashboard');
+        const ngoDashboard = document.getElementById('ngoDashboard');
+
+        const loginRegisterBtn = document.getElementById('loginRegisterBtn');
+        const userNavButtons = document.getElementById('userNavButtons');
+
+        function hideAllViews() {
+            homePage.classList.add('hidden');
+            restDashboard.classList.add('hidden');
+            ngoDashboard.classList.add('hidden');
+        }
+        
+        function updateNavBar(isLoggedIn) {
+            loginRegisterBtn.style.display = isLoggedIn ? 'none' : 'block';
+            userNavButtons.style.display = isLoggedIn ? 'flex' : 'none';
+        }
+
+        function showHome() {
+            hideAllViews();
+            homePage.classList.remove('hidden');
+            updateNavBar(false);
+            currentUserRole = null;
+        }
+
+        // --- NGO MAP INIT (LEAFLET) ---
+        function initYWasteMap() {
+            const mapContainer = document.getElementById('ywasteMap');
+            if (!mapContainer) return;
+
+            if (ywasteMap) {
+                setTimeout(() => {
+                    ywasteMap.invalidateSize();
+                }, 100);
+                return;
+            }
+
+            ywasteMap = L.map('ywasteMap').setView([28.6139, 77.2090], 13);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(ywasteMap);
+
+            const posts = [
+                { title: "Cafe Delight Pastries", lat: 28.6175, lng: 77.2080, info: "Breakfast pastries & coffee (~30 items)" },
+                { title: "Grand Banquet Dinner", lat: 28.6202, lng: 77.2156, info: "Dinner buffet surplus (40 meals)" },
+                { title: "Local Grocer Milk", lat: 28.6121, lng: 77.2013, info: "Excess Milk & Dairy (15L)" }
+            ];
+
+            posts.forEach(post => {
+                L.marker([post.lat, post.lng])
+                    .addTo(ywasteMap)
+                    .bindPopup(`<b>${post.title}</b><br>${post.info}`);
+            });
+        }
+        
+        function handleFeatureClick(role) {
+  const storedRole = localStorage.getItem("ywasteRole");
+
+  if (!storedRole) {
+    openInitialPopup();
+    alert(`Please log in to access the ${role.toUpperCase()} dashboard.`);
+    return;
+  }
+
+  if (storedRole !== role) {
+    alert("Access Denied: You are logged in with another role.");
+    return;
+  }
+
+  loadDashboard(role);
+}
+
+
+
+        async function loadDashboard(role) {
+  hideAllViews();
+
+  if (role === "restaurant") {
+    restDashboard.classList.remove("hidden");
+    document.getElementById("restaurantName").innerText =
+      localStorage.getItem("restaurantName") || "Restaurant Partner";
+  }
+
+  if (role === "ngo") {
+    ngoDashboard.classList.remove("hidden");
+    document.getElementById("ngoName").innerText =
+      localStorage.getItem("ngoName") || "NGO Partner";
+    renderClaimedItems();
+    setTimeout(initYWasteMap, 300);
+  }
+
+  updateNavBar(true);
+}
+
+
+
+        // --- POPUP FLOW ---
+        function closeOverlay() {
+            overlay.style.display = 'none';
+        }
+        
+        function openInitialPopup() {
+            overlay.style.display = 'flex';
+            
+            pWelcome.classList.add('hidden');
+            pRole.classList.add('hidden');
+            pForm.classList.add('hidden');
+            pLogin.classList.add('hidden');
+            document.getElementById('popupNgoForm').classList.add('hidden');
+            
+            pWelcome.classList.remove('hidden');
+        }
+
+        function goToStep2() {
+            pWelcome.classList.add('hidden');
+            pRole.classList.remove('hidden');
+        }
+
+        function goToStep3() {
+            pRole.classList.add('hidden');
+            pForm.classList.remove('hidden');
+        }
+
+        function showNgoForm() {
+            pRole.classList.add('hidden');
+            document.getElementById('popupNgoForm').classList.remove('hidden');
+        }
+        
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                closeOverlay();
+            }
+        });
+        
+        // --- INITIAL LOAD SEQUENCE ---
+        window.onload = function() {
+            setTimeout(() => {
+                splashScreen.classList.add('fade-out');
+                
+                setTimeout(() => {
+                    splashScreen.style.display = 'none';
+                    document.getElementById('mainApp').classList.remove('hidden');
+                    showHome(); 
+                }, 1000); 
+
+            }, 1500); 
+        }
+
+        // --- RESTAURANT: ADD FOOD POST LOGIC ---
+        function openFoodPopup() {
+          document.getElementById("addFoodPopup").classList.remove("hidden");
+        }
+
+        function closeFoodPopup() {
+          document.getElementById("addFoodPopup").classList.add("hidden");
+        }
+
+        document.getElementById("foodPostForm").addEventListener("submit", function(e) {
+          e.preventDefault();
+
+          const post = {
+            title: document.getElementById("foodTitle").value,
+            quantity: document.getElementById("foodQuantity").value,
+            type: document.getElementById("foodType").value,
+            time: document.getElementById("pickupTime").value
+          };
+
+          foodPosts.push(post);
+          closeFoodPopup();
+          renderFoodPosts();
+          this.reset();
+        });
+
+        function renderFoodPosts() {
+          const container = document.getElementById("restaurantPostGrid");
+          container.innerHTML = "";
+
+          foodPosts.forEach(post => {
+            container.innerHTML += `
+              <div class="food-post-card" style="border-left-color:#56ab2f;">
+                <div class="post-details-info">
+                  <h3>${post.title}</h3>
+                  <p>Quantity: ${post.quantity} Meals | Type: ${post.type}</p>
+                  <span><i class="fas fa-clock"></i> Pickup Window: ${post.time}</span>
+                </div>
+                <button class="claim-food-btn" style="background:#56ab2f;">View Claim</button>
+              </div>
+            `;
+          });
+        }
+
+        function toggleMapView() {
+  const map = document.getElementById("ywasteMap");
+
+  // Toggle visibility
+  map.classList.toggle("hidden");
+
+  // If map gets visible, reinitialize / resize map
+  if (!map.classList.contains("hidden")) {
+    setTimeout(() => {
+      initYWasteMap();   // your existing map load function
+      ywasteMap.invalidateSize();
+    }, 300);
+  }
+}
+
+let volunteerLogs = [];
+
+function toggleVolunteerLog() {
+  document.getElementById("volunteerLogSection").classList.toggle("hidden");
+}
+
+document.getElementById("volunteerLogForm").addEventListener("submit", function(e) {
+  e.preventDefault();
+
+  const log = {
+    name: document.getElementById("logName").value,
+    food: document.getElementById("logFood").value,
+    meals: document.getElementById("logMeals").value,
+    date: document.getElementById("logDate").value
+  };
+
+  volunteerLogs.push(log);
+  renderVolunteerLogs();
+  this.reset();
+});
+
+function renderVolunteerLogs() {
+  const container = document.getElementById("volunteerLogList");
+  const emptyMsg = document.getElementById("noLogMsg");
+
+  if (volunteerLogs.length === 0) {
+    emptyMsg.style.display = "block";
+    container.innerHTML = emptyMsg.outerHTML;
+    return;
+  }
+
+  emptyMsg.style.display = "none";
+
+  container.innerHTML = volunteerLogs.map(log => `
+    <div style="border-bottom:1px solid #eee; padding:10px 0;">
+      <strong>${log.name}</strong> collected <strong>${log.meals}</strong> meals of <strong>${log.food}</strong> 
+      on <strong>${log.date}</strong>
+    </div>
+  `).join("");
+}
+
+function requestDashboardAccess(role) {
+  const name = localStorage.getItem("ywasteUserName");
+  const loggedIn = name && name.trim().length > 0;
+
+  if (!loggedIn) {
+    openInitialPopup();
+    alert(`Please log in to access the ${role.toUpperCase()} dashboard.`);
+    return;
+  }
+
+  loadDashboard(role);
+}
+
+firebase.auth().onAuthStateChanged(async (user) => {
+  if (!user) return;
+
+  const doc = await firebase.firestore().collection("users").doc(user.uid).get();
+  const data = doc.data();
+
+  if (data.role === "restaurant") {
+    localStorage.setItem("restaurantName", data.name);
+    currentUserRole = "restaurant";
+    loadDashboard("restaurant");
+  } else if (data.role === "ngo") {
+    localStorage.setItem("ngoName", data.name);
+    currentUserRole = "ngo";
+    loadDashboard("ngo");
+  }
+});
+
+
+    </script>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyBvAO1KSQUqmeVnaMhsAxpChSP-BfmQFkk",
+    authDomain: "ywaste-71dfc.firebaseapp.com",
+    projectId: "ywaste-71dfc",
+    storageBucket: "ywaste-71dfc.firebasestorage.app",
+    messagingSenderId: "876124235878",
+    appId: "1:876124235878:web:b9137ef2e55a2ff8e465a7"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+</script>
+
+
+</body>
+</html>

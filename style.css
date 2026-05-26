@@ -19,6 +19,7 @@ body{
     background-image: url(images/desktop_bg.jpg);
     background-size: cover;
     background-position: center;
+    background-blend-mode: darken;
 }
 .container{
     padding: 10px 10%;
@@ -146,10 +147,12 @@ nav ul li a:hover::after{
     padding: 30px 0;
 }
 .profile-list{
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    grid-gap: 40px;
+    display: flex;
+    justify-content: left;
     margin-top: 50px;
+}
+.profile-list div{
+    width: 350px;
 }
 .profile-list div{
     background:#262626;
@@ -246,15 +249,18 @@ nav ul li a:hover::after{
     display: block;
     margin: 50px auto;
     width: fit-content;
-    border: 1px solid #ff004f;
-    padding : 14px 50px;
-    border-radius: 6px;
+    padding : 12px 36px;
+    border-radius: 10px;
     text-decoration: none;
-    color: #1d75da;
-    transition: background 0.5s;
+    background: #ffffff;
+    color:  #1d75da;
+    border: 1px solid #ff5c7a;
+    transition: 0.4s;
+    font-weight: 500;
 }
 .btn:hover{
-    background: #ff004f;
+    background: #ff5c7a;
+    color: white;
 } 
 
 /* ----------------contact--------- */
@@ -377,4 +383,7 @@ nav .fa-solid{
     color : rgb(28, 237, 189);
     margin-top: -40px;
     display: block;
+}
+.header-text{
+    margin-top: 22%;
 }
